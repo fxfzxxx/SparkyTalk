@@ -1,0 +1,8 @@
+# Netlify site settings: set "Base directory" to apps/admin.
+# Netlify detects Next.js and applies its runtime automatically.
+[build]
+  command = "pnpm --filter @sparkytalk/admin... build"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "22"

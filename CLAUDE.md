@@ -4,7 +4,17 @@
 
 **核心差异化：AI**（语音控制、蓝图解析、AI 报价），以及 **AI 老板秘书**（通知提醒 + 催收要账，重点）。通用 CRM 功能不和 Tradify / Fergus（都是 NZ 本土，成熟）硬拼。
 
-> 当前状态：规划阶段，仓库还没有代码。本文件记录已确定的方向，后续逐步实现。
+> 当前状态：MVP 骨架已搭好（见下方"代码现状"）。本文件同时记录产品方向，后续逐步实现。
+
+## 代码现状与常用命令
+
+- `pnpm install` / `pnpm dev` / `pnpm typecheck` / `pnpm test`（turbo 跑全部包）。改完代码提交前跑 typecheck 和 test。
+- 数据库：改 `apps/api/src/db/schema.ts` → `pnpm db:generate` 生成迁移（提交到 `apps/api/drizzle/`）→ `pnpm db:migrate`。`pnpm --filter @sparkytalk/api db:seed` 生成演示数据。
+- Auth 尚未选型：API 仅支持 `AUTH_MODE=dev`（请求头 `x-dev-user-id` = 员工 id），生产环境禁止启用。所有查询必须按 `companyId` 隔离。
+- 已实现：员工/工地（含楼层房间、位置来源、围栏）、派工计划、计划变更日志、到场/离场事件、房间×阶段进度、AI 提议（语音文字指令、蓝图解析）→ 确认后落库。
+- AI：`packages/ai`，模型常量在 `client.ts`；用 structured outputs（zod schema 在 `packages/shared/src/schemas/ai.ts`）；prompt 带版本号，所有输入输出存 `ai_proposals` 表。
+- 手机端：Expo Router，页面在 `apps/mobile/src/app/`（今天 / 说话 / 我）；地理围栏在 `src/lib/geofence.ts`，需 dev build，Expo Go 不支持。改 Expo 相关代码前先读 `apps/mobile/AGENTS.md`。
+- 待做：真实登录、语音录音 + STT（目前只能输入文字）、离线队列、推送通知、确认卡片上直接修正未匹配的人/工地。
 
 ## 技术栈与部署
 
