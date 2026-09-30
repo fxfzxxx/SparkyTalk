@@ -10,7 +10,23 @@
 
 - `pnpm install` / `pnpm dev` / `pnpm typecheck` / `pnpm test`（turbo 跑全部包）。改完代码提交前跑 typecheck 和 test。
 - 数据库：改 `apps/api/src/db/schema.ts` → `pnpm db:generate` 生成迁移（提交到 `apps/api/drizzle/`）→ `pnpm db:migrate`。`pnpm --filter @sparkytalk/api db:seed` 生成演示数据。
-- Auth 尚未选型：API 仅支持 `AUTH_MODE=dev`（请求头 `x-dev-user-id` = 员工 id），生产环境禁止启用。所有查询必须按 `companyId` 隔离。
+- 本地 Postgres：`pnpm db:start`（`scripts/dev-db.mjs`，embedded-postgres 便携版，不用装 Postgres/Docker），数据在 `.pgdata/`（gitignore）。要一直开着，另开终端跑 `pnpm dev`；删 `.pgdata/` 重新 migrate + seed 即可重置。
+- Auth 尚未选型：API 仅支持 `AUTH_MODE=dev`（请求头 `x-dev-user-id` = 用户名或员工 id；演示用户 `admin` 老板、`worker1` 张伟、`worker2` Mike），生产环境禁止启用。所有查询必须按 `companyId` 隔离。
+- 密钥：`ANTHROPIC_API_KEY` 只放 `apps/api/.env`（gitignore），绝不提交；部署时放 Railway 环境变量。仓库里只有留空的 `.env.example`。
+
+### 新电脑上继续开发
+
+需要 Node 22+ 和 git。数据库数据不随代码走，新电脑上重新 seed。
+
+1. `git clone https://github.com/fxfzxxx/SparkyTalk.git`，切到当前开发分支。
+2. `corepack enable`（管理员终端，一次性；让 `pnpm` 命令可用。不想用管理员就每条命令前加 `corepack`，但 `pnpm dev` 依赖 turbo 找到 pnpm，需要 enable）。
+3. `pnpm install`
+4. `cp .env.example apps/api/.env`，填 `ANTHROPIC_API_KEY`（建议每台电脑在 Anthropic Console 单独建一个 key，或从密码管理器取；不要用聊天/邮件/Git 传）。
+5. 终端 A：`pnpm db:start`（保持运行）。
+6. 终端 B：`pnpm db:migrate` → `pnpm --filter @sparkytalk/api db:seed` → `pnpm dev`（api :8787，admin :3000）。
+7. 打开后台，右上角用户名输入 `admin` 回车。
+
+端口冲突：admin 默认 3000，被占用时在 `apps/admin` 下跑 `pnpm exec next dev --port 3002`，并把该地址加进 `apps/api/.env` 的 `CORS_ORIGINS`。5432 被本机 Postgres 占用时，改 `DATABASE_URL` 的端口，`db:start` 会跟着用。
 - 已实现：员工/工地（含楼层房间、位置来源、围栏）、派工计划、计划变更日志、到场/离场事件、房间×阶段进度、AI 提议（语音文字指令、蓝图解析）→ 确认后落库。
 - AI：`packages/ai`，模型常量在 `client.ts`；用 structured outputs（zod schema 在 `packages/shared/src/schemas/ai.ts`）；prompt 带版本号，所有输入输出存 `ai_proposals` 表。
 - 手机端：Expo Router，页面在 `apps/mobile/src/app/`（今天 / 说话 / 我）；地理围栏在 `src/lib/geofence.ts`，需 dev build，Expo Go 不支持。改 Expo 相关代码前先读 `apps/mobile/AGENTS.md`。

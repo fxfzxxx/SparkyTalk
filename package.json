@@ -10,10 +10,12 @@
     "build": "turbo run build",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
+    "db:start": "node scripts/dev-db.mjs",
     "db:generate": "pnpm --filter @sparkytalk/api db:generate",
     "db:migrate": "pnpm --filter @sparkytalk/api db:migrate"
   },
   "devDependencies": {
+    "embedded-postgres": "18.4.0-beta.17",
     "turbo": "^2.11.5",
     "typescript": "~6.0.3"
   }

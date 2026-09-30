@@ -15,11 +15,14 @@ decisions live in [CLAUDE.md](CLAUDE.md).
 
 ## Local setup
 
-Requires Node 22+, pnpm 10 and a Postgres database.
+Requires Node 22+ and pnpm 10 (`corepack enable`). No Postgres install needed: `pnpm db:start`
+runs a portable one with data in `.pgdata/` (gitignored). Using your own Postgres also works —
+just point `DATABASE_URL` at it and skip `db:start`.
 
 ```bash
 pnpm install
-cp .env.example apps/api/.env          # fill in DATABASE_URL and ANTHROPIC_API_KEY
+cp .env.example apps/api/.env          # fill in ANTHROPIC_API_KEY (never commit it)
+pnpm db:start                          # keep running; use a second terminal for the rest
 pnpm db:migrate
 pnpm --filter @sparkytalk/api db:seed  # demo users: admin (owner), worker1, worker2
 pnpm dev                               # api :8787, admin :3000, Expo
