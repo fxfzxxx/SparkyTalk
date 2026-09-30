@@ -47,7 +47,7 @@ ul { margin: 0; padding-left: 18px; }
 .topbar a { color: var(--text); text-decoration: none; }
 .topbar a:hover { color: var(--accent); }
 .dev-user { font-size: 12px; color: var(--muted); display: flex; gap: 6px; align-items: center; }
-.dev-user input { width: 300px; max-width: 60vw; }
+.dev-user input { width: 180px; max-width: 40vw; }
 
 .card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
 .row { display: flex; gap: 8px; align-items: center; justify-content: space-between; flex-wrap: wrap; }

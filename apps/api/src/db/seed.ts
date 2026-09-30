@@ -12,9 +12,9 @@ if (!company) throw new Error("seed failed");
 const staff = await db
   .insert(employees)
   .values([
-    { companyId: company.id, name: "Aaron Li", aliases: ["老板", "Aaron"], role: "owner" },
-    { companyId: company.id, name: "张伟", aliases: ["小张", "Zhang", "David"], role: "worker" },
-    { companyId: company.id, name: "Mike Brown", aliases: ["Mike"], role: "worker" },
+    { companyId: company.id, name: "Aaron Li", username: "admin", aliases: ["老板", "Aaron"], role: "owner" },
+    { companyId: company.id, name: "张伟", username: "worker1", aliases: ["小张", "Zhang", "David"], role: "worker" },
+    { companyId: company.id, name: "Mike Brown", username: "worker2", aliases: ["Mike"], role: "worker" },
   ])
   .returning();
 
@@ -41,5 +41,5 @@ await db.transaction(async (tx) => {
 });
 
 console.log("Seeded company", company.id);
-for (const e of staff) console.log(`  ${e.role.padEnd(6)} ${e.name}  x-dev-user-id: ${e.id}`);
+for (const e of staff) console.log(`  ${e.role.padEnd(6)} ${e.name}  用户名: ${e.username}`);
 process.exit(0);

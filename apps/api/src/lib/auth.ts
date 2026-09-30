@@ -23,18 +23,19 @@ export function assertAuthConfig() {
 
 /**
  * TODO(auth): replace with a real provider (see CLAUDE.md, Auth 待定).
- * Until then only AUTH_MODE=dev is supported: the caller names an employee id
- * in the x-dev-user-id header.
+ * Until then only AUTH_MODE=dev is supported: the caller names an employee by
+ * username (e.g. "admin") or id in the x-dev-user-id header.
  */
 export const requireUser = createMiddleware<AppEnv>(async (c, next) => {
   if (process.env.AUTH_MODE !== "dev") {
     return c.json({ error: "auth_not_configured" }, 501);
   }
-  const userId = c.req.header("x-dev-user-id");
-  if (!userId || !UUID_RE.test(userId)) {
-    return c.json({ error: "unauthenticated" }, 401);
-  }
-  const [row] = await db.select().from(employees).where(eq(employees.id, userId)).limit(1);
+  const login = c.req.header("x-dev-user-id")?.trim();
+  if (!login) return c.json({ error: "unauthenticated" }, 401);
+  const match = UUID_RE.test(login)
+    ? eq(employees.id, login)
+    : eq(employees.username, login.toLowerCase());
+  const [row] = await db.select().from(employees).where(match).limit(1);
   if (!row) return c.json({ error: "unauthenticated" }, 401);
   c.set("user", { id: row.id, companyId: row.companyId, name: row.name, role: row.role });
   await next();

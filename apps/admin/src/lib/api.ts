@@ -2,7 +2,7 @@
 
 import { createApiClient } from "@sparkytalk/shared";
 
-const USER_KEY = "sparkytalk.devUserId";
+const USER_KEY = "sparkytalk.devUser";
 
 export function getDevUserId(): string | null {
   try {
@@ -12,11 +12,11 @@ export function getDevUserId(): string | null {
   }
 }
 
-export function setDevUserId(id: string) {
+export function setDevUserId(username: string) {
   try {
-    localStorage.setItem(USER_KEY, id);
+    localStorage.setItem(USER_KEY, username);
   } catch {
-    // storage unavailable (private mode); the id just won't persist
+    // storage unavailable (private mode); the username just won't persist
   }
 }
 

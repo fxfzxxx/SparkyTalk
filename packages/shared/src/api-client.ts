@@ -5,7 +5,7 @@
 import type { CreateSiteInput, Employee, SetSiteLocationInput, Site, SiteVisitEventInput } from "./schemas/domain";
 import type { BlueprintExtraction, CommandInterpretation, ProposedAction } from "./schemas/ai";
 import type { LocalDate } from "./dates";
-import type { ScheduleEntryStatus, SiteVisitEventType, Stage } from "./enums";
+import type { Role, ScheduleEntryStatus, SiteVisitEventType, Stage } from "./enums";
 
 export interface PlanRow {
   id: string;
@@ -52,7 +52,7 @@ export class ApiError extends Error {
 
 export interface ApiClientOptions {
   baseUrl: string;
-  /** Dev-mode auth: the employee id to act as. Replaced when real auth lands. */
+  /** Dev-mode auth: the username (or employee id) to act as. Replaced when real auth lands. */
   getUserId: () => string | null;
 }
 
@@ -71,6 +71,7 @@ export function createApiClient({ baseUrl, getUserId }: ApiClientOptions) {
     request<T>(path, { method: "POST", body: JSON.stringify(data) });
 
   return {
+    me: () => request<{ id: string; companyId: string; name: string; role: Role }>("/v1/me"),
     employees: () => request<Employee[]>("/v1/employees"),
     sites: () => request<Site[]>("/v1/sites"),
     createSite: (input: CreateSiteInput) => post<{ id: string }>("/v1/sites", input),

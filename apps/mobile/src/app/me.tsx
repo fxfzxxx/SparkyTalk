@@ -20,7 +20,7 @@ export default function MeScreen() {
       <SafeAreaView style={styles.safeArea}>
         <ThemedText type="subtitle">我</ThemedText>
         <ThemedText type="small" themeColor="textSecondary">
-          开发用户 ID（运行 db:seed 后会打印出来）
+          用户名（老板 admin，工人 worker1 / worker2）
         </ThemedText>
         <TextInput
           value={value}
@@ -30,13 +30,13 @@ export default function MeScreen() {
           }}
           autoCapitalize="none"
           autoCorrect={false}
-          placeholder="x-dev-user-id"
+          placeholder="admin"
           placeholderTextColor={theme.textSecondary}
           style={[styles.input, { color: theme.text, backgroundColor: theme.backgroundElement }]}
         />
         <Button
           title={saved ? '已保存' : '保存'}
-          onPress={() => void setSession(value).then(() => setSaved(true))}
+          onPress={() => void setSession(value.toLowerCase()).then(() => setSaved(true))}
         />
         <ThemedText type="small" themeColor="textSecondary">
           位置说明：只在今天安排的工地记录到场和离场，不做全天定位。

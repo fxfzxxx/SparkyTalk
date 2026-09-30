@@ -1,9 +1,9 @@
 import * as SecureStore from 'expo-secure-store';
 
-const KEY = 'sparkytalk.devUserId';
+const KEY = 'sparkytalk.devUser';
 let current: string | null = null;
 
-/** Dev-mode identity until real auth lands: the employee id sent as x-dev-user-id. */
+/** Dev-mode identity until real auth lands: the username sent as x-dev-user-id. */
 export function getUserId(): string | null {
   return current;
 }

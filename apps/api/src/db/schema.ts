@@ -59,6 +59,8 @@ export const employees = pgTable(
     id: id(),
     companyId: companyId(),
     name: text("name").notNull(),
+    /** Dev-mode login name (lowercase), e.g. "admin", "worker1". */
+    username: text("username").unique(),
     aliases: text("aliases").array().notNull().default(sql`'{}'::text[]`),
     role: roleEnum("role").notNull(),
     phone: text("phone"),

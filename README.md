@@ -21,12 +21,13 @@ Requires Node 22+, pnpm 10 and a Postgres database.
 pnpm install
 cp .env.example apps/api/.env          # fill in DATABASE_URL and ANTHROPIC_API_KEY
 pnpm db:migrate
-pnpm --filter @sparkytalk/api db:seed  # prints employee ids to use as dev users
+pnpm --filter @sparkytalk/api db:seed  # demo users: admin (owner), worker1, worker2
 pnpm dev                               # api :8787, admin :3000, Expo
 ```
 
-Until real auth is chosen, the API runs with `AUTH_MODE=dev`: clients send an employee id
-in the `x-dev-user-id` header (the admin top bar and the mobile 「我」 tab have a field for it).
+Until real auth is chosen, the API runs with `AUTH_MODE=dev`: clients send a username
+(`admin`, `worker1`, `worker2`) or employee id in the `x-dev-user-id` header. Type the username
+into the admin top bar or the mobile 「我」 tab.
 The API refuses to start with `AUTH_MODE=dev` when `NODE_ENV=production`.
 
 Checks: `pnpm typecheck` and `pnpm test`.
