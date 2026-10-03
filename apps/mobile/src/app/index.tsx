@@ -1,5 +1,6 @@
 import { STAGE_LABELS, type PlanRow } from '@sparkytalk/shared';
-import { useCallback, useEffect, useState } from 'react';
+import { useFocusEffect } from 'expo-router';
+import { useCallback, useState } from 'react';
 import { Alert, RefreshControl, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -37,9 +38,12 @@ export default function TodayScreen() {
     }
   }, []);
 
-  useEffect(() => {
-    void load();
-  }, [load]);
+  // Reload whenever the tab is shown, e.g. after switching user in 「我」.
+  useFocusEffect(
+    useCallback(() => {
+      void load();
+    }, [load]),
+  );
 
   async function checkIn(row: PlanRow) {
     try {
