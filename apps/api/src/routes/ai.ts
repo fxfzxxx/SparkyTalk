@@ -17,7 +17,7 @@ import { and, eq } from "drizzle-orm";
 import { Hono, type Context } from "hono";
 import { z } from "zod";
 import { db } from "../db/client";
-import { aiProposals, employees } from "../db/schema";
+import { aiProposals, employees, scheduleEntries } from "../db/schema";
 import { applyActions, validateActions, type KnownEntities } from "../lib/actions";
 import { isManager, requireManager, type AppEnv, type AuthUser } from "../lib/auth";
 import { createSite, loadSites } from "../lib/sites";
@@ -30,11 +30,13 @@ function knownEntities(employeeIds: string[], sites: Site[]): KnownEntities {
     roomsBySite: new Map(
       sites.map((s) => [s.id, new Set(s.levels.flatMap((l) => l.rooms.map((r) => r.id)))]),
     ),
+    itemsBySite: new Map(sites.map((s) => [s.id, new Set(s.items.map((i) => i.id))])),
   };
 }
 
 async function loadContext(user: AuthUser) {
-  const [staff, sites] = await Promise.all([
+  const today = nzDate();
+  const [staff, sites, todaysPlan] = await Promise.all([
     db
       .select({
         id: employees.id,
@@ -45,10 +47,22 @@ async function loadContext(user: AuthUser) {
       .from(employees)
       .where(eq(employees.companyId, user.companyId)),
     loadSites(db, user.companyId),
+    db
+      .select({ siteId: scheduleEntries.siteId })
+      .from(scheduleEntries)
+      .where(
+        and(
+          eq(scheduleEntries.companyId, user.companyId),
+          eq(scheduleEntries.employeeId, user.id),
+          eq(scheduleEntries.date, today),
+          eq(scheduleEntries.status, "planned"),
+        ),
+      ),
   ]);
   const ctx: CommandContext = {
-    today: nzDate(),
+    today,
     speaker: { id: user.id, name: user.name, role: user.role },
+    speakerSitesToday: [...new Set(todaysPlan.map((p) => p.siteId))],
     employees: staff,
     sites,
   };

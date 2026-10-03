@@ -1,9 +1,14 @@
 import { zValidator } from "@hono/zod-validator";
-import { CreateSiteInput, SetSiteLocationInput } from "@sparkytalk/shared";
-import { and, eq, isNull } from "drizzle-orm";
+import {
+  AddSiteItemInput,
+  CreateSiteInput,
+  SetSiteLocationInput,
+  type SiteProgress,
+} from "@sparkytalk/shared";
+import { and, desc, eq, inArray, isNull, max } from "drizzle-orm";
 import { Hono } from "hono";
 import { db } from "../db/client";
-import { sites } from "../db/schema";
+import { employees, levels, roomProgress, rooms, siteItems, siteNotes, sites } from "../db/schema";
 import { isManager, requireManager, type AppEnv } from "../lib/auth";
 import { createSite, loadSites } from "../lib/sites";
 
@@ -32,4 +37,77 @@ export const siteRoutes = new Hono<AppEnv>()
       .returning();
     if (!row) return c.json({ error: "not_found_or_already_located" }, 404);
     return c.json(row);
+  })
+  /** Room × stage progress and recent notes for one site. */
+  .get("/:id/progress", async (c) => {
+    const user = c.get("user");
+    const [site] = await db
+      .select({ id: sites.id })
+      .from(sites)
+      .where(and(eq(sites.id, c.req.param("id")), eq(sites.companyId, user.companyId)));
+    if (!site) return c.json({ error: "not_found" }, 404);
+    const roomIds = db
+      .select({ id: rooms.id })
+      .from(rooms)
+      .innerJoin(levels, eq(rooms.levelId, levels.id))
+      .where(eq(levels.siteId, site.id));
+    const [cells, notes] = await Promise.all([
+      db
+        .select({
+          roomId: roomProgress.roomId,
+          stage: roomProgress.stage,
+          status: roomProgress.status,
+          remainingDays: roomProgress.remainingDays,
+        })
+        .from(roomProgress)
+        .where(inArray(roomProgress.roomId, roomIds)),
+      db
+        .select({
+          id: siteNotes.id,
+          note: siteNotes.note,
+          createdByName: employees.name,
+          createdAt: siteNotes.createdAt,
+        })
+        .from(siteNotes)
+        .innerJoin(employees, eq(siteNotes.createdBy, employees.id))
+        .where(eq(siteNotes.siteId, site.id))
+        .orderBy(desc(siteNotes.createdAt))
+        .limit(20),
+    ]);
+    const progress: SiteProgress = {
+      rooms: cells,
+      notes: notes.map((n) => ({ ...n, createdAt: n.createdAt.toISOString() })),
+    };
+    return c.json(progress);
+  })
+  .post("/:id/items", requireManager, zValidator("json", AddSiteItemInput), async (c) => {
+    const user = c.get("user");
+    const input = c.req.valid("json");
+    const [site] = await db
+      .select({ id: sites.id })
+      .from(sites)
+      .where(and(eq(sites.id, c.req.param("id")), eq(sites.companyId, user.companyId)));
+    if (!site) return c.json({ error: "not_found" }, 404);
+    const [last] = await db
+      .select({ n: max(siteItems.sortOrder) })
+      .from(siteItems)
+      .where(eq(siteItems.siteId, site.id));
+    const [item] = await db
+      .insert(siteItems)
+      .values({ siteId: site.id, ...input, sortOrder: (last?.n ?? -1) + 1 })
+      .returning();
+    return c.json(item, 201);
+  })
+  .delete("/:id/items/:itemId", requireManager, async (c) => {
+    const user = c.get("user");
+    const owned = db
+      .select({ id: sites.id })
+      .from(sites)
+      .where(and(eq(sites.id, c.req.param("id")), eq(sites.companyId, user.companyId)));
+    const rows = await db
+      .delete(siteItems)
+      .where(and(eq(siteItems.id, c.req.param("itemId")), inArray(siteItems.siteId, owned)))
+      .returning({ id: siteItems.id });
+    if (!rows.length) return c.json({ error: "not_found" }, 404);
+    return c.json({ ok: true });
   });

@@ -38,6 +38,25 @@ export const Level = z.object({
 });
 export type Level = z.infer<typeof Level>;
 
+/** Site-level work not tied to a room, e.g. mains cable or switchboard. */
+export const SiteItem = z.object({
+  id: Id,
+  name: z.string(),
+  /** Other names used in speech, e.g. "主电缆", "mains". Used by AI matching. */
+  aliases: z.array(z.string()),
+  status: ProgressStatus,
+  remainingDays: z.number().nullable(),
+});
+export type SiteItem = z.infer<typeof SiteItem>;
+
+/** Work items every new site starts with; sites can add or remove their own. */
+export const DEFAULT_SITE_ITEMS: { name: string; aliases: string[] }[] = [
+  { name: "主线缆", aliases: ["主电缆", "进户线", "mains", "main cable", "sub-main", "submain"] },
+  { name: "电表箱", aliases: ["表箱", "meter box"] },
+  { name: "配电箱", aliases: ["总闸箱", "配电板", "switchboard", "board"] },
+  { name: "户外", aliases: ["室外", "外墙灯", "outdoor", "external", "outside lights"] },
+];
+
 export const Site = z.object({
   id: Id,
   /** What people call it: official address, "Lot 23, Stage 2", or "老王那个新房". */
@@ -51,6 +70,7 @@ export const Site = z.object({
   locationSource: LocationSource.nullable(),
   floorAreaM2: z.number().nullable(),
   levels: z.array(Level),
+  items: z.array(SiteItem),
 });
 export type Site = z.infer<typeof Site>;
 
@@ -65,6 +85,18 @@ export const CreateSiteInput = z.object({
     .default([]),
 });
 export type CreateSiteInput = z.infer<typeof CreateSiteInput>;
+
+export const AddSiteItemInput = z.object({
+  name: z.string().trim().min(1),
+  aliases: z.array(z.string()).default([]),
+});
+export type AddSiteItemInput = z.input<typeof AddSiteItemInput>;
+
+/** Room × stage matrix cells plus recent notes, for the owner's site view. */
+export interface SiteProgress {
+  rooms: { roomId: string; stage: Stage; status: ProgressStatus; remainingDays: number | null }[];
+  notes: { id: string; note: string; createdByName: string; createdAt: string }[];
+}
 
 export const SetSiteLocationInput = z.object({
   location: GeoPoint,

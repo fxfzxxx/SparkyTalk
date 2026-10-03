@@ -2,7 +2,16 @@
  * Minimal typed client for the SparkyTalk API, shared by admin (web) and mobile.
  * Uses fetch only, so it runs in browsers, React Native and Node.
  */
-import type { CreateSiteInput, Employee, SetSiteLocationInput, Site, SiteVisitEventInput } from "./schemas/domain";
+import type {
+  AddSiteItemInput,
+  CreateSiteInput,
+  Employee,
+  SetSiteLocationInput,
+  Site,
+  SiteItem,
+  SiteProgress,
+  SiteVisitEventInput,
+} from "./schemas/domain";
 import type { BlueprintExtraction, CommandInterpretation, ProposedAction } from "./schemas/ai";
 import type { LocalDate } from "./dates";
 import type { Role, ScheduleEntryStatus, SiteVisitEventType, Stage } from "./enums";
@@ -77,6 +86,11 @@ export function createApiClient({ baseUrl, getUserId }: ApiClientOptions) {
     createSite: (input: CreateSiteInput) => post<{ id: string }>("/v1/sites", input),
     setSiteLocation: (siteId: string, input: SetSiteLocationInput) =>
       request(`/v1/sites/${siteId}/location`, { method: "PUT", body: JSON.stringify(input) }),
+    siteProgress: (siteId: string) => request<SiteProgress>(`/v1/sites/${siteId}/progress`),
+    addSiteItem: (siteId: string, input: AddSiteItemInput) =>
+      post<SiteItem>(`/v1/sites/${siteId}/items`, input),
+    deleteSiteItem: (siteId: string, itemId: string) =>
+      request(`/v1/sites/${siteId}/items/${itemId}`, { method: "DELETE" }),
     board: (date?: LocalDate) =>
       request<{ date: LocalDate; plan: PlanRow[]; visits: VisitRow[] }>(
         `/v1/schedule${date ? `?date=${date}` : ""}`,

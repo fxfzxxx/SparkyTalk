@@ -53,6 +53,15 @@ export const ReportProgressAction = z.object({
       remainingDays: z.number().nullable(),
     }),
   ),
+  /** Site-level work items (mains cable, switchboard…). itemId null = add a new item called `name`. */
+  items: z.array(
+    z.object({
+      itemId: z.string().nullable(),
+      name: z.string(),
+      status: ProgressStatus,
+      remainingDays: z.number().nullable(),
+    }),
+  ),
   note: z.string().nullable(),
 });
 

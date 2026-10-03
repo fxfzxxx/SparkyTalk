@@ -191,6 +191,46 @@ export const roomProgress = pgTable(
 );
 
 /**
+ * Site-level work that isn't tied to a room (mains cable, switchboard, EV charger…).
+ * New sites start with DEFAULT_SITE_ITEMS; each site can add or remove its own.
+ */
+export const siteItems = pgTable(
+  "site_items",
+  {
+    id: id(),
+    siteId: uuid("site_id")
+      .notNull()
+      .references(() => sites.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    aliases: text("aliases").array().notNull().default(sql`'{}'::text[]`),
+    sortOrder: integer("sort_order").notNull(),
+    status: progressStatusEnum("status").notNull().default("not_started"),
+    remainingDays: doublePrecision("remaining_days"),
+    updatedBy: uuid("updated_by").references(() => employees.id),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("site_items_site_idx").on(t.siteId)],
+);
+
+/** Free-text progress remarks that fit neither rooms nor items ("材料没到", "等 inspector"). */
+export const siteNotes = pgTable(
+  "site_notes",
+  {
+    id: id(),
+    companyId: companyId(),
+    siteId: uuid("site_id")
+      .notNull()
+      .references(() => sites.id, { onDelete: "cascade" }),
+    note: text("note").notNull(),
+    createdBy: uuid("created_by")
+      .notNull()
+      .references(() => employees.id),
+    createdAt: createdAt(),
+  },
+  (t) => [index("site_notes_site_idx").on(t.siteId, t.createdAt)],
+);
+
+/**
  * Every AI interpretation, kept for review and evaluation.
  * Nothing is applied until a person confirms it.
  */

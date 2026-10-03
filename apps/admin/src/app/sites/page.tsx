@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import type { Site } from "@sparkytalk/shared";
 import { BlueprintUpload } from "@/components/BlueprintUpload";
+import { SiteProgressView } from "@/components/SiteProgressView";
 import { api } from "@/lib/api";
 
 const SOURCE_LABEL: Record<NonNullable<Site["locationSource"]>, string> = {
@@ -41,11 +42,7 @@ export default function SitesPage() {
               {" · "}
               {s.locationSource ? `位置：${SOURCE_LABEL[s.locationSource]}` : "位置未设定（首次到场时设定）"}
             </p>
-            {s.levels.map((l) => (
-              <p key={l.id}>
-                <strong>{l.name}</strong>：{l.rooms.map((r) => r.name).join("、")}
-              </p>
-            ))}
+            <SiteProgressView site={s} onChanged={load} />
           </article>
         ))}
       </section>

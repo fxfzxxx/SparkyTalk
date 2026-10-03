@@ -1,5 +1,9 @@
-import { STAGE_LABELS } from "./enums";
+import { STAGE_LABELS, type ProgressStatus } from "./enums";
 import type { ProposedAction } from "./schemas/ai";
+
+function statusMark(status: ProgressStatus): string {
+  return status === "done" ? "✅" : status === "in_progress" ? "⏳" : "未开始";
+}
 
 /** Human-readable line for a proposed action on the confirmation card. */
 export function describeAction(action: ProposedAction): string {
@@ -13,15 +17,31 @@ export function describeAction(action: ProposedAction): string {
       return `改计划：${action.employee.spoken} ${action.date}${action.timeNote ? ` ${action.timeNote}` : ""} ${
         action.fromSite ? `从 ${action.fromSite.spoken} ` : ""
       }改去 ${action.toSite.spoken}`;
-    case "report_progress":
-      return `进度：${action.site.spoken} — ${action.updates
-        .map(
-          (u) =>
-            `${u.roomSpoken} ${STAGE_LABELS[u.stage].zh}${
-              u.status === "done" ? "✅" : u.status === "in_progress" ? "⏳" : "未开始"
-            }${u.remainingDays ? `（剩 ${u.remainingDays} 天）` : ""}`,
-        )
-        .join("，")}`;
+    case "report_progress": {
+      // "一楼" expands to one update per room; show each spoken place once with its room count.
+      const places = new Map<string, { rooms: Set<string | null>; stages: string[] }>();
+      for (const u of action.updates) {
+        const place = places.get(u.roomSpoken) ?? { rooms: new Set(), stages: [] };
+        place.rooms.add(u.roomId);
+        const stage = `${STAGE_LABELS[u.stage].zh}${statusMark(u.status)}${
+          u.remainingDays ? `（剩 ${u.remainingDays} 天）` : ""
+        }`;
+        if (!place.stages.includes(stage)) place.stages.push(stage);
+        places.set(u.roomSpoken, place);
+      }
+      const parts = [...places].map(
+        ([spoken, { rooms, stages }]) =>
+          `${spoken}${rooms.size > 1 ? `（${rooms.size} 间）` : ""} ${stages.join(" ")}`,
+      );
+      for (const item of action.items) {
+        parts.push(
+          `${item.itemId ? "" : "新增工作项 "}${item.name}${statusMark(item.status)}${
+            item.remainingDays ? `（剩 ${item.remainingDays} 天）` : ""
+          }`,
+        );
+      }
+      return `进度：${action.site.spoken} — ${parts.join("；")}${action.note ? `。备注：${action.note}` : ""}`;
+    }
     case "clarify":
       return `需要确认：${action.question}`;
   }

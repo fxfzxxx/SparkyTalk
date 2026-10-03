@@ -13,8 +13,10 @@ import { COMMAND_PROMPT_VERSION, COMMAND_SYSTEM_PROMPT } from "./prompts/command
 export interface CommandContext {
   today: LocalDate;
   speaker: Pick<Employee, "id" | "name" | "role">;
+  /** Site ids the speaker is scheduled at today; the default site for progress reports. */
+  speakerSitesToday: string[];
   employees: Pick<Employee, "id" | "name" | "aliases" | "role">[];
-  sites: Pick<Site, "id" | "displayName" | "officialAddress" | "aliases" | "levels">[];
+  sites: Pick<Site, "id" | "displayName" | "officialAddress" | "aliases" | "levels" | "items">[];
 }
 
 export function renderCommandContext(ctx: CommandContext): string {
@@ -33,10 +35,12 @@ export function renderCommandContext(ctx: CommandContext): string {
       name: l.name,
       rooms: l.rooms.map((r) => ({ id: r.id, name: r.name })),
     })),
+    items: s.items.map((i) => ({ id: i.id, name: i.name, aliases: i.aliases })),
   }));
   return [
     `Today in New Zealand: ${ctx.today} (${weekday(ctx.today)}). Tomorrow: ${addDays(ctx.today, 1)}.`,
     `Speaker: ${ctx.speaker.name} (id ${ctx.speaker.id}, role ${ctx.speaker.role}).`,
+    `Speaker's sites today: ${JSON.stringify(ctx.speakerSitesToday)}`,
     `Employees: ${JSON.stringify(employees)}`,
     `Sites: ${JSON.stringify(sites)}`,
   ].join("\n");

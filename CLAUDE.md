@@ -27,7 +27,7 @@
 7. 打开后台，右上角用户名输入 `admin` 回车。
 
 端口冲突：admin 默认 3000，被占用时在 `apps/admin` 下跑 `pnpm exec next dev --port 3002`，并把该地址加进 `apps/api/.env` 的 `CORS_ORIGINS`。5432 被本机 Postgres 占用时，改 `DATABASE_URL` 的端口，`db:start` 会跟着用。
-- 已实现：员工/工地（含楼层房间、位置来源、围栏）、派工计划、计划变更日志、到场/离场事件、房间×阶段进度、AI 提议（语音文字指令、蓝图解析）→ 确认后落库。
+- 已实现：员工/工地（含楼层房间、位置来源、围栏）、派工计划、计划变更日志、到场/离场事件、房间×阶段进度、工地工作项 + 备注、AI 提议（语音文字指令、蓝图解析）→ 确认后落库。后台「工地」页显示进度矩阵、工作项（可增删）和备注。
 - AI：`packages/ai`，模型常量在 `client.ts`；用 structured outputs（zod schema 在 `packages/shared/src/schemas/ai.ts`）；prompt 带版本号，所有输入输出存 `ai_proposals` 表。
 - 手机端：Expo Router，页面在 `apps/mobile/src/app/`（今天 / 说话 / 我）；地理围栏在 `src/lib/geofence.ts`，需 dev build，Expo Go 不支持。改 Expo 相关代码前先读 `apps/mobile/AGENTS.md`。
 - 待做：真实登录、语音录音 + STT（目前只能输入文字）、离线队列、推送通知、确认卡片上直接修正未匹配的人/工地。
@@ -88,6 +88,12 @@ Stage: 打洞/布管 → 拉线 rough-in → 装面板 fit-off → 测试 → Co
 例：工人说"拉线完成了一楼加二楼主人套房，二楼其他已打好洞，还要半天" → LLM 生成矩阵 diff：
 一楼全部 rough-in ✅；二楼主卧 rough-in ✅；二楼其他 打洞 ✅、rough-in ⏳、剩余预估 0.5 天 → 工人确认 → 老板实时看到。
 同时支持手动打卡 / 编辑。
+
+**工地工作项**（不属于某个房间的活）：主线缆、电表箱、配电箱、户外、EV 充电桩等，每项一个状态（✅/⏳/未开始 + 剩余天数），表 `site_items`。
+- 每个工地灵活：新建工地自动带上默认清单 `DEFAULT_SITE_ITEMS`（`packages/shared/src/schemas/domain.ts`，含别名如"主电缆"=主线缆），老板可在后台增删。
+- AI 汇报时按名称/别名匹配已有项；清单里没有的活提议"新增工作项"（itemId 为 null），工人确认后才加。
+- 既不属于房间也不属于工作项的（材料没到、等 inspector）写进备注，表 `site_notes`，老板在工地页看到。
+- 待做：公司级默认清单（老板自定义模板，替代代码里的常量）。
 
 ### 4. AI 报价（重点方向）
 结构：**Takeoff（数量）→ Assembly（组合件）→ Price book（价格库）→ Quote**

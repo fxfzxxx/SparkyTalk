@@ -12,6 +12,10 @@ const known = {
     ["s1", new Set(["r1", "r2"])],
     ["s2", new Set<string>()],
   ]),
+  itemsBySite: new Map([
+    ["s1", new Set(["i-mains"])],
+    ["s2", new Set(["i-board"])],
+  ]),
 };
 
 const createJob: ProposedAction = {
@@ -61,10 +65,26 @@ describe("validateActions", () => {
       updates: [
         { roomId: "r1", roomSpoken: "Kitchen", stage: "rough_in", status: "done", remainingDays: null },
       ],
+      items: [],
       note: null,
     };
     expect(validateActions([report], worker, known)).toEqual([
       { index: 0, problem: 'unknown room "Kitchen"' },
+    ]);
+  });
+
+  it("accepts site work items, including new ones, but not another site's items", () => {
+    const report = (itemId: string | null, name: string): ProposedAction => ({
+      type: "report_progress",
+      site: { id: "s1", spoken: "151 coast rd" },
+      updates: [],
+      items: [{ itemId, name, status: "not_started", remainingDays: null }],
+      note: null,
+    });
+    expect(validateActions([report("i-mains", "主线缆")], worker, known)).toEqual([]);
+    expect(validateActions([report(null, "EV 充电桩")], worker, known)).toEqual([]);
+    expect(validateActions([report("i-board", "配电箱")], worker, known)).toEqual([
+      { index: 0, problem: 'unknown work item "配电箱"' },
     ]);
   });
 });
